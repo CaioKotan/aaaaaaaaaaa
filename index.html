@@ -68,6 +68,37 @@
       color: #fff;
       transition: 0.2s;
     }
+    .l1 button{
+      left: 0;
+      top: 20px;
+      position: fixed;
+      margin-left: 10px;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      background-color: var(--primary-green);
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .l1 button:hover{
+      background-color: #fff;
+      color: var(--primary-green);
+      transition: 0.2s;
+    }
+    .l1 button.visible {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+    pointer-events: auto;
+    }
+    .l1 button.hidden {
+      opacity: 0;
+      transform: translateY(-50%) translateX(-100px); /* efeito de “deslizar” para fora */
+      pointer-events: none;
+    }
 
     .popup, .config-page, .cultivos {
       display: none;
@@ -177,6 +208,7 @@
   <br><br><br>
   <div class="l1">
     <h1>CultivIA</h1>
+    <button onclick="atualizarModulo()" id="scrollButton">Atualizar Módulo</button>
   </div>
   <section class="hero" id="hr">
     <h2>Monitoramento Inteligente para Hidroponia</h2>
@@ -207,6 +239,9 @@
     </div>
     <div class="chart-container">
       <canvas id="chartSoil"></canvas>
+    </div>
+    <div class="chart-container">
+      <canvas id="chartAll"></canvas>
     </div>
   </section>
 
@@ -269,10 +304,10 @@
       chartTemp = new Chart(document.getElementById('chartTemp'), {
         type: 'line',
         data: {
-          labels: ['0', '0', '0', '0', '0', '0'],
+          labels: ['0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
           datasets: [{
             label: 'Temperatura (°C)',
-            data: Array(6).fill(0), // Inicializa com zeros
+            data: Array(12).fill(0), // Inicializa com zeros
             borderColor: '#00c853',
             tension: 0.4,
             fill: false
@@ -283,10 +318,10 @@
       chartHumidity = new Chart(document.getElementById('chartHumidity'), {
         type: 'line',
         data: { 
-          labels: ['0', '0', '0', '0', '0', '0'], 
+          labels: ['0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'], 
           datasets: [{ 
             label: 'Umidade do Ar (%)', 
-            data: Array(6).fill(0), // Inicializa com zeros
+            data: Array(12).fill(0), // Inicializa com zeros
             borderColor: '#00bfa5', 
             tension: 0.4, 
             fill: false 
@@ -297,10 +332,38 @@
       chartSoil = new Chart(document.getElementById('chartSoil'), {
         type: 'line',
         data: { 
-          labels: ['0', '0', '0', '0', '0', '0'], 
+          labels: ['0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'], 
           datasets: [{ 
             label: 'Umidade do Solo (%)', 
-            data: Array(6).fill(0), // Inicializa com zeros
+            data: Array(12).fill(0), // Inicializa com zeros
+            borderColor: '#64dd17', 
+            tension: 0.4, 
+            fill: false 
+          }] 
+        }
+      });
+    
+      chartAll = new Chart(document.getElementById('chartAll'), {
+        type: 'line',
+        data: { 
+          labels: ['0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'], 
+          datasets: [{ 
+            label: 'Temperatura (°C)', 
+            data: Array(12).fill(0), // Inicializa com zeros
+            borderColor: '#00c853', 
+            tension: 0.4, 
+            fill: false 
+          },
+          {
+            label: 'Umidade do Ar (%)', 
+            data: Array(12).fill(0), // Inicializa com zeros
+            borderColor: '#00bfa5', 
+            tension: 0.4, 
+            fill: false 
+          },
+          {
+            label: 'Umidade do Solo (%)', 
+            data: Array(12).fill(0), // Inicializa com zeros
             borderColor: '#64dd17', 
             tension: 0.4, 
             fill: false 
@@ -408,7 +471,7 @@
 
       // Atualiza os dados dos gráficos
       chartTemp.data.datasets[0].data.shift(); // Remove o primeiro elemento
-      chartTemp.data.datasets[0].data.push(umidadeAr-30); // Adiciona o novo valor
+      chartTemp.data.datasets[0].data.push((umidadeAr/umidadeSolucao)*39); // Adiciona o novo valor
       chartTemp.data.labels.push(horas+':'+minutos); // Remove o primeiro elemento
       chartTemp.data.labels.shift();
 
@@ -423,18 +486,44 @@
       chartSoil.data.labels.push(horas+':'+minutos); // Remove o primeiro elemento
       chartSoil.data.labels.shift();
 
+      chartAll.data.datasets[0].data.shift(); // Remove o primeiro elemento
+      chartAll.data.datasets[0].data.push((umidadeAr/umidadeSolucao)*39); // Adiciona o novo valor
+      chartAll.data.datasets[1].data.shift(); // Remove o primeiro elemento
+      chartAll.data.datasets[1].data.push(umidadeAr); // Adiciona o novo valor
+      chartAll.data.datasets[2].data.shift(); // Remove o primeiro elemento
+      chartAll.data.datasets[2].data.push(umidadeSolucao); // Adiciona o novo valor
+      chartAll.data.labels.push(horas+':'+minutos); // Remove o primeiro elemento
+      chartAll.data.labels.shift();
+
+
       // Atualiza os gráficos
       chartTemp.update();
       chartHumidity.update();
       chartSoil.update();
+      chartAll.update();
     }
 
     // Inicializa os gráficos ao carregar a página
     window.onload = function() {
       initCharts();
-      setInterval(atualizarModulo, 500); // Atualiza a cada 5 segundos
+      setInterval(atualizarModulo, 300000); // Atualiza a cada 5 segundos
       atualizarModulo(); // Atualiza uma vez imediatamente ao carregar
     };
+  </script>
+  <script>
+      window.addEventListener('scroll', function () {
+      const button = document.getElementById('scrollButton');
+      if (window.scrollY > 100) { // mostra após rolar 100px para baixo
+        button.classList.add('visible');
+        button.classList.remove('hidden');
+      } else {
+        button.classList.add('hidden');
+        button.classList.remove('visible');
+      }
+    });
+    window.addEventListener('load', () => {
+      button.classList.add('hidden');
+    });
   </script>
 </body>
 </html>
