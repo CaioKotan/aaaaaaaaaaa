@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CultivIA - Monitoramento Hidropônico</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Estilos existentes */
+    :root {
+      --primary-green: #00c853;
+      --bg-color: #f9f9f9;
+      --card-bg: #ffffff;
+      --card-bg2: #eeeeee;
+      --text-color: #222;
+    }
+    .l1{
+      width:100%;
+      justify-content: center;
+      text-align: center;
+    }
+    body.dark {
+      --bg-color: #121212;
+      --card-bg: #1f1f1f;
+      --card-bg2: #2f2f2fdd;
+      --text-color: #f0f0f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+
+    header {
+      background-color: var(--primary-green);
+      color: white;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-title {
+      font-size: 2rem;
+    }
+
+    .header-buttons button {
+      margin-left: 10px;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      background-color: white;
+      color: var(--primary-green);
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .header-buttons button:hover{
+      background-color: var(--primary-green);
+      color: #fff;
+      transition: 0.2s;
+    }
+
+    .popup, .config-page, .cultivos {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--card-bg2);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+    }
+
+    .popup input {
+      display: block;
+      margin: 1rem 0;
+      padding: 0.5rem;
+      width: 100%;
+      background-color: var(--card-bg2);
+      color: #fff;
+      border-width: 2px;
+      border-radius: 10px;
+      border-color: var(--primary-green);
+    }
+
+    .popup button {
+      background: var(--primary-green);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 5;
+    }
+
+    .hero, .features, .charts, .cultivos {
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .features, .charts {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .feature, .chart-container, .module {
+      margin-top: 10px;
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      padding: 1.5rem;
+      width: 400px;
+      text-align: center;
+    }
+
+    .feature h3, .module h4 {
+      color: var(--primary-green);
+      margin-bottom: 0.5rem;
+    }
+
+    footer {
+      background-color: #111;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    @media (min-width:600px){
+        .chart-container{
+            width: 900px;
+            transition: 0.3s;
+        }
+        .chart-container:hover .chart-container{
+            width: 700px;
+            transition: 0.3s;
+        }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="overlay"></div>
+  <header>
+    <div class="header-title">CultivIA</div>
+    <div class="header-buttons" id="authButtons">
+      <button onclick="showPopup('login')">Entrar</button>
+      <button onclick="showPopup('register')">Registre-se</button>
+    </div>
+    <div class="header-buttons" id="userMenu" style="display:none">
+      <button onclick="showCultivos()">🌱 Meus Cultivos</button>
+      <button onclick="logout()">🚪 Sair</button>
+    </div>
+  </header>
+
+  <br><br><br>
+  <div class="l1">
+    <h1>CultivIA</h1>
+  </div>
+  <section class="hero" id="hr">
+    <h2>Monitoramento Inteligente para Hidroponia</h2>
+    <p>Visualize, analise e automatize sua plantação com dados em tempo real usando inteligência artificial.</p>
+  </section>
+  <section class="features" id="ftr"> 
+    <div class="feature">
+      <h3>Automação Inteligente</h3>
+      <p>Controle completo de bombas, válvulas e sensores com IA integrada.</p>
+    </div>
+    <div class="feature">
+      <h3>Visualização Avançada</h3>
+      <p>Gráficos claros e dinâmicos sobre temperatura, umidade e nutrientes.</p>
+    </div>
+    <div class="feature">
+      <h3>Gestão Sustentável</h3>
+      <p>Economia de água e nutrientes com decisões baseadas em dados.</p>
+    </div>
+  </section>
+  <br><br><br>
+
+  <section class="charts" id="charts" style="display: none;">
+    <div class="chart-container">
+      <canvas id="chartTemp"></canvas>
+    </div>
+    <div class="chart-container">
+      <canvas id="chartHumidity"></canvas>
+    </div>
+    <div class="chart-container">
+      <canvas id="chartSoil"></canvas>
+    </div>
+  </section>
+
+  <div class="cultivos" id="cultivos">
+    <div class="module">
+      <h4>Módulo 01 🟢</h4>
+      <p>Umidade do Ar: <span id="umidadeAr">65%</span></p>
+      <p>Umidade do solo: <span id="umidadeSolucao">75%</span></p>
+      <p>pH: <span id="ph">6.2</span></p>
+      <p>Condutividade: <span id="condutividade">1.4</span> mS/cm</p>
+    </div>
+  </div>
+
+  <div class="popup" id="popup-login">
+    <h3>Entrar</h3>
+    <input type="email" placeholder="Email" id="loginEmail">
+    <input type="password" placeholder="Senha" id="loginPassword">
+    <button onclick="login()">Entrar</button>
+  </div>
+
+  <div class="popup" id="popup-register">
+    <h3>Registre-se</h3>
+    <input type="email" placeholder="Email" id="registerEmail">
+    <input type="password" placeholder="Senha" id="registerPassword">
+    <input type="password" placeholder="Confirme a Senha" id="registerConfirmPassword">
+    <button onclick="register()">Registrar</button>
+  </div>
+
+  <div class="popup config-page" id="configPage">
+    <h3>Configurações</h3>
+    <label>Nome: <input type="text" id="configName"></label><br><br>
+    <label>Chave da API do Firebase: <input type="text" id="firebaseApiKey"></label><br><br>
+    <label>Tema:
+      <select id="themeSelect">
+        <option value="light">Claro</option>
+        <option value="dark">Escuro</option>
+      </select>
+    </label><br><br>
+    <button onclick="saveConfig()">Salvar</button>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 BITponia. Todos os direitos reservados.</p>
+  </footer>
+
+  <script>
+    const user = localStorage.getItem('user');
+    const theme = localStorage.getItem('theme');
+
+    if (theme === 'dark') document.body.classList.add('dark');
+    if (user) {
+      login(user); // Tente fazer login automaticamente se o usuário já estiver armazenado
+    }
+
+    // Variáveis globais para os gráficos
+    let chartTemp, chartHumidity, chartSoil;
+
+    // Inicialização dos gráficos
+    function initCharts() {
+      chartTemp = new Chart(document.getElementById('chartTemp'), {
+        type: 'line',
+        data: {
+          labels: ['0', '0', '0', '0', '0', '0'],
+          datasets: [{
+            label: 'Temperatura (°C)',
+            data: Array(6).fill(0), // Inicializa com zeros
+            borderColor: '#00c853',
+            tension: 0.4,
+            fill: false
+          }]
+        }
+      });
+
+      chartHumidity = new Chart(document.getElementById('chartHumidity'), {
+        type: 'line',
+        data: { 
+          labels: ['0', '0', '0', '0', '0', '0'], 
+          datasets: [{ 
+            label: 'Umidade do Ar (%)', 
+            data: Array(6).fill(0), // Inicializa com zeros
+            borderColor: '#00bfa5', 
+            tension: 0.4, 
+            fill: false 
+          }] 
+        }
+      });
+
+      chartSoil = new Chart(document.getElementById('chartSoil'), {
+        type: 'line',
+        data: { 
+          labels: ['0', '0', '0', '0', '0', '0'], 
+          datasets: [{ 
+            label: 'Umidade do Solo (%)', 
+            data: Array(6).fill(0), // Inicializa com zeros
+            borderColor: '#64dd17', 
+            tension: 0.4, 
+            fill: false 
+          }] 
+        }
+      });
+    }
+
+    function showPopup(type) {
+      document.getElementById('overlay').style.display = 'block';
+      document.getElementById(`popup-${type}`).style.display = 'block';
+    }
+
+    function closePopups() {
+      document.getElementById('overlay').style.display = 'none';
+      document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+    }
+
+    document.getElementById('overlay').addEventListener('click', closePopups);
+
+    function login() {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      if (email && password) {
+        localStorage.setItem('user', email);
+        document.getElementById('authButtons').style.display = 'none';
+        document.getElementById('userMenu').style.display = 'flex';
+        document.getElementById('charts').style.display = 'flex'; // Mostrar gráficos após login
+        document.getElementById('ftr').style.display = 'none';
+        document.getElementById('hr').style.display = 'none';
+        
+        closePopups();
+      } else {
+        alert("Por favor, preencha todos os campos.");
+      }
+    }
+
+    function register() {
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+      if (email && password && password === confirmPassword) {
+        localStorage.setItem('user', email); // Armazenar email como usuário
+        login();
+      } else {
+        alert("As senhas não coincidem ou estão vazias.");
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('user');
+      document.getElementById('authButtons').style.display = 'flex';
+      document.getElementById('userMenu').style.display = 'none';
+      document.getElementById('charts').style.display = 'none'; // Ocultar gráficos ao sair
+      document.getElementById('cultivos').style.display = 'none';
+      document.getElementById('ftr').style.display = 'flex';
+      document.getElementById('hr').style.display = 'block';
+    }
+
+    function showConfig() {
+      document.getElementById('overlay').style.display = 'block';
+      document.getElementById('configPage').style.display = 'block';
+      document.getElementById('configName').value = localStorage.getItem('user');
+      document.getElementById('firebaseApiKey').value = localStorage.getItem('firebaseApiKey') || '';
+      document.getElementById('themeSelect').value = localStorage.getItem('theme') || 'light';
+    }
+
+    function saveConfig() {
+      const name = document.getElementById('configName').value;
+      const firebaseApiKey = document.getElementById('firebaseApiKey').value;
+      const theme = document.getElementById('themeSelect').value;
+      localStorage.setItem('user', name);
+      localStorage.setItem('firebaseApiKey', firebaseApiKey);
+      localStorage.setItem('theme', theme);
+      document.body.className = theme === 'dark' ? 'dark' : '';
+      closePopups();
+    }
+
+    function showCultivos() {
+      const cultivosSection = document.getElementById('cultivos');
+      if (cultivosSection.style.display === 'block') {
+        cultivosSection.style.display = 'none';
+      } else {
+        cultivosSection.style.display = 'block';
+      }
+    }
+
+    function atualizarModulo() {
+      // Geração de dados simulados (você pode ajustar os ranges)
+      const umidadeAr = (60 + Math.random() * 10).toFixed(1);
+      const umidadeSolucao = (70 + Math.random() * 10).toFixed(1);
+      const ph = (5.5 + Math.random() * 1.5).toFixed(2);
+      const condutividade = (1.2 + Math.random() * 0.4).toFixed(2);
+      const horas = new Date().getHours().toString().padStart(2, '0');
+      const minutos = new Date().getMinutes().toString().padStart(2, '0');
+      const ultimaRega = `${horas}:${minutos}`;
+      const diasCultivo = Math.floor(Math.random() * 30) + 1;
+
+      // Atualiza no HTML
+      document.getElementById("umidadeAr").textContent = `${umidadeAr}%`;
+      document.getElementById("umidadeSolucao").textContent = `${umidadeSolucao}%`;
+      document.getElementById("ph").textContent = ph;
+      document.getElementById("condutividade").textContent = condutividade;
+
+      // Atualiza os dados dos gráficos
+      chartTemp.data.datasets[0].data.shift(); // Remove o primeiro elemento
+      chartTemp.data.datasets[0].data.push(umidadeAr-30); // Adiciona o novo valor
+      chartTemp.data.labels.push(horas+':'+minutos); // Remove o primeiro elemento
+      chartTemp.data.labels.shift();
+
+      chartHumidity.data.datasets[0].data.shift(); // Remove o primeiro elemento
+      chartHumidity.data.datasets[0].data.push(umidadeAr); // Adiciona o novo valor
+      chartHumidity.data.labels.push(horas+':'+minutos); // Remove o primeiro elemento
+      chartHumidity.data.labels.shift();
+
+
+      chartSoil.data.datasets[0].data.shift(); // Remove o primeiro elemento
+      chartSoil.data.datasets[0].data.push(umidadeSolucao); // Adiciona o novo valor
+      chartSoil.data.labels.push(horas+':'+minutos); // Remove o primeiro elemento
+      chartSoil.data.labels.shift();
+
+      // Atualiza os gráficos
+      chartTemp.update();
+      chartHumidity.update();
+      chartSoil.update();
+    }
+
+    // Inicializa os gráficos ao carregar a página
+    window.onload = function() {
+      initCharts();
+      setInterval(atualizarModulo, 500); // Atualiza a cada 5 segundos
+      atualizarModulo(); // Atualiza uma vez imediatamente ao carregar
+    };
+  </script>
+</body>
+</html>
